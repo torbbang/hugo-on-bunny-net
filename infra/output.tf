@@ -1,4 +1,4 @@
-output "bunny_pz_id " {
+output "bunny_pz_id" {
   value = bunnynet_pullzone.site.id
 }
 

@@ -8,7 +8,7 @@ You can read more avout this this in [this blog post](https://torbjorn.dev/blog/
 1. Copy the `.github/workflows` folder and the `infra` folder into your hugo website repository.
 
 2. Create the following secret & vars:
-- **Secret:** BUNNY_API_TOKEN, your bunny.net API token
+- **Secret:** BUNNY_KEY, your bunny.net API token
 - **Variable:** FQDN, the FQDN of your website
 - **Variable:** STATE_SZ_ID, the ID of an existing storage zone to store your TF state
 
