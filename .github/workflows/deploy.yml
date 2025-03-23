@@ -77,6 +77,13 @@ jobs:
           username: ${{ needs.deploy-infra.outputs.bunny-sz-name }}
           password: ${{ needs.deploy-infra.outputs.bunny-sz-password }}
 
+  purge-cache:
+    name: 🚮 Purge cache
+    runs-on: ubuntu-latest
+    needs: 
+    - deploy-infra
+    - deploy-site
+    steps:
       - name: Purge cache
         run: |
           curl --request POST \
