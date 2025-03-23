@@ -3,6 +3,7 @@ on:
   push:
     branches:
     - master
+    - main
 jobs:
   deploy-infra:
     name: 🛠️ Deploy infrastructure 
