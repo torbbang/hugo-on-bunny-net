@@ -1,3 +1,7 @@
+output "bunny_pz_id " {
+  value = bunnynet_pullzone.site.id
+}
+
 output "bunny_sz_name" {
   value = bunnynet_storage_zone.site.name
 }

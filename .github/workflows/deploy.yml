@@ -9,6 +9,7 @@ jobs:
     name: 🛠️ Deploy infrastructure 
     runs-on: ubuntu-latest
     outputs: 
+      bunny-pz-id: ${{ steps.get-outvars.outputs.bunny_pz_id }}
       bunny-sz-name: ${{ steps.get-outvars.outputs.bunny_sz_name }}
       bunny-sz-hostname: ${{ steps.get-outvars.outputs.bunny_sz_hostname }}
       bunny-sz-password: ${{ steps.get-outvars.outputs.bunny_sz_password }}
@@ -50,7 +51,7 @@ jobs:
       - name: Get terraform outputs
         id: get-outvars
         run: |
-          for var in "bunny_sz_name" "bunny_sz_hostname" "bunny_sz_password" 
+          for var in "bunny_sz_name" "bunny_sz_hostname" "bunny_sz_password" "bunny_pz_id"
             do echo "${var}=$(terraform output -raw $var)" >> $GITHUB_OUTPUT 
           done
 
@@ -75,3 +76,10 @@ jobs:
           server: ${{ needs.deploy-infra.outputs.bunny-sz-hostname }}
           username: ${{ needs.deploy-infra.outputs.bunny-sz-name }}
           password: ${{ needs.deploy-infra.outputs.bunny-sz-password }}
+
+      - name: Purge cache
+        run: |
+          curl --request POST \
+          --header 'accept: application/json' \
+          --header 'AccessKey: ${{ secrets.BUNNY_KEY }}' \
+          --url https://api.bunny.net/pullzone/${{ needs.deploy-infra.outputs.bunny-pz-id }}/purgeCache 
