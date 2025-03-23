@@ -1,0 +1,76 @@
+name: 🐰 Deploy to Bunny.net
+on: 
+  push:
+    branches:
+    - master
+jobs:
+  deploy-infra:
+    name: 🛠️ Deploy infrastructure 
+    runs-on: ubuntu-latest
+    outputs: 
+      bunny-sz-name: ${{ steps.get-outvars.outputs.bunny_sz_name }}
+      bunny-sz-hostname: ${{ steps.get-outvars.outputs.bunny_sz_hostname }}
+      bunny-sz-password: ${{ steps.get-outvars.outputs.bunny_sz_password }}
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Fetch credentials
+        run: |
+          curl --header 'accept: application/json' \
+          --header 'AccessKey: ${{ secrets.BUNNY_KEY }}' \
+          https://api.bunny.net/storagezone/${{ vars.STATE_SZ_ID }} \
+          | tee >( echo "STATE_SZ_PASSWORD=$(jq -r .Password )" >> $GITHUB_ENV) \
+          | tee >( echo "STATE_SZ_HOSTNAME=$(jq -r .StorageHostname )" >> $GITHUB_ENV ) \
+          | echo "STATE_SZ_NAME=$(jq -r .Name)" >> $GITHUB_ENV
+
+      - name: Fetch state
+        run: curl -u $STATE_SZ_NAME:$STATE_SZ_PASSWORD ftp://$STATE_SZ_HOSTNAME/terraform.tfstate -o terraform.tfstate
+        continue-on-error: true
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Init terraform
+        run: terraform init
+
+      - name: Deploy infra
+        run: |
+          terraform apply -auto-approve \
+          --var bunny_key=${{ secrets.BUNNY_KEY }} \
+          --var fqdn=${{ vars.FQDN }}
+
+      - name: Upload state
+        run: curl -u $STATE_SZ_NAME:$STATE_SZ_PASSWORD ftp://$STATE_SZ_HOSTNAME/ -T terraform.tfstate
+      
+      - name: Get terraform outputs
+        id: get-outvars
+        run: |
+          for var in "bunny_sz_name" "bunny_sz_hostname" "bunny_sz_password" 
+            do echo "${var}=$(terraform output -raw $var)" >> $GITHUB_OUTPUT 
+          done
+
+  deploy-site:
+    name: 🎨 Deploy site
+    runs-on: ubuntu-latest
+    needs: deploy-infra
+    container:
+      image: hugomods/hugo:go-git
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Build site
+        run: hugo build 
+
+      - name: Upload bundle
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          local-dir: ./public/
+          server-dir: /
+          server: ${{ needs.deploy-infra.outputs.bunny-sz-hostname }}
+          username: ${{ needs.deploy-infra.outputs.bunny-sz-name }}
+          password: ${{ needs.deploy-infra.outputs.bunny-sz-password }}

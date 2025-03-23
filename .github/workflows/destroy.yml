@@ -1,0 +1,28 @@
+name: 💣 Destroy deployment
+on: [workflow_dispatch]
+jobs:
+  destroy-infra:
+    name: 🔥 Destroy infrastructure 
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Fetch state
+        run: curl -u ${{ vars.BUNNY_TF_USER}}:${{ secrets.BUNNY_TF_Key }} ftp://${{ vars.BUNNY_TF_HOST }}/terraform.tfstate -o terraform.tfstate
+        continue-on-error: true
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Init terraform
+        run: terraform init
+
+      - name: Deploy infra
+        run: terraform destroy --var bunny_key=${{ secrets.BUNNY_KEY }} -auto-approve
+
+      - name: Upload state
+        run: curl -T terraform.tfstate -u ${{ vars.BUNNY_TF_USER}}:${{ secrets.BUNNY_TF_Key }} ftp://${{ vars.BUNNY_TF_HOST }}/
