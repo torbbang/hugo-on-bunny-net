@@ -1,3 +1,9 @@
+> [!IMPORTANT]
+> ## 🚚 This project has moved to [git.torbjorn.dev](https://git.torbjorn.dev/torbbang/hugo-on-bunny-net)
+> This GitHub repository is archived and no longer maintained.
+
+---
+
 # Deploy Hugo site to Bunny.net
 
 A simple example of how one can deploy a hugo site with bunny.net storage & CDN. 
